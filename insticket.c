@@ -42,7 +42,7 @@ TODO(USING THE SOLUTION insticket.c NOT MY CODE)
  *          database. This saves space and is faster to compare than a string         
  *          Conversion function is supplied. use example:
  *               unsigned long long summid;
- *               if (strtosumid(summ, &summid) != 0)
+ *               if (strtosumid(summ, &summid, argv) != 0)
  *                  error handling
  *               new_ticket->summons = summid;
  *  plate   plate id string to be added
@@ -53,7 +53,7 @@ TODO(USING THE SOLUTION insticket.c NOT MY CODE)
  *          The encoding into a number uses Linux time format.
  *          Conversion function is supplied. use example:
  *              time_t dateval;
- *              if (strtoDate(date, &dateval) != 0)
+ *              if (strtoDate(date, &dateval, argv) != 0)
  *                  error handling
  *              new_ticket->date = dateval;
  *  code    summons code integer value used an an index into the fines table
@@ -67,10 +67,6 @@ insertticket(char *summ, char *plate, char *state, char *date, int code)
     unsigned long long summid;
     time_t dateval;
 
-    (void)plate; // delete this when you write your code
-    (void)state; // delete this when you write your code
-    (void)code;  // delete this when you write your code
-
     if (strtosumid(summ, &summid) != 0)
         return -1;
 
@@ -80,14 +76,66 @@ insertticket(char *summ, char *plate, char *state, char *date, int code)
     /*
      * either add ticket to chain or add vehicle and then the ticket
      */
-    
+    struct vehicle *car = vehiclelookup(plate, state); /*car to add to*/
+
+    if (car == NULL){
+        if ((car = malloc(sizeof(*car))) == NULL){
+            fprintf(stderr, "%s: unable to allocate vehicle for summons %s\n",
+            argv0, summ);
+            return -1;
+        }
+        if ((car -> plate = strdup(plate)) == NULL){
+            fprintf(stderr, "%s: unable to allocate state for summons %s\n",
+            argv0, summ);
+            return -1;
+        }
+        if ((car -> state = strdup(state)) == NULL){
+            fprintf(stderr, "%s: unable to allocate plate for summons %s\n",
+            argv0, summ);
+        }
+        car -> tot_fine = 0;
+        car -> cnt_ticket = 0;
+        
+        car -> head = NULL;
+        
+        uint32_t hashval; /*index of hashchain to add car to*/
+        hashval = hash(plate) % tabsz;
+        car -> next = *(htable + hashval);
+        *(htable + hashval) = car;
+    }
+
     /*
      * if you are inserting a ticket and find it is already in the database
      * do not insert it, do the following error message
      * fprintf(stderr,"%s: duplicate summons %llu\n", argv0, summid);
      * then do a return -1;
      */
+    struct ticket **tkt = &(car -> head); /*to traverse ticket list*/
+    
+    while (*tkt != NULL){
+        if (summid == ((*tkt) -> summons)){
+            fprintf(stderr, "%s: duplicate summons %llu\n", argv0, summid);
+            return -1;
+        }
+        tkt = &((*tkt) -> next);
+    }
+    
+    struct ticket *newTkt;
+    if ((newTkt = malloc(sizeof(*newTkt))) == NULL){/*new ticket to add*/
+        fprintf(stderr, "%s: unable to allocate ticket for summons %s\n", argv0,
+        summ);
+    }
+    newTkt -> summons = summid;
+    newTkt -> date = dateval;
+    newTkt -> code = code;
+    newTkt -> next = NULL;
+
+    *tkt = newTkt;
+    
+    car -> tot_fine += (fineTab[code].fine);
+    (car -> cnt_ticket)++;
 
     return 0;
 }
+
 #endif
