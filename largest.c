@@ -25,7 +25,28 @@ largest(void)
     struct vehicle *fine = NULL;  // vehicle with largest total fine
 
 /* your code here */
+    unsigned int gFine=0;//greatest fine amount so far
+    unsigned int gTkt=0;//greatest ticket amount so far
+    struct vehicle **endptr = htable+tabsz;//end of hash table
+    struct vehicle **chain = htable;//traverses hash table
 
+    while (chain < endptr){
+        if (*chain != NULL){
+            struct vehicle *car=*chain;//traverse vehicles in chain
+            while (car != NULL){
+                if ((car -> tot_fine) >= gFine){
+                    fine = car;
+                    gFine = car -> tot_fine;
+                }
+                if ((car -> cnt_ticket) >= gTkt){
+                    count = car;
+                    gTkt = car -> cnt_ticket;
+                }
+                car=car -> next;
+            }
+        }
+        chain++;    
+    }
 
     if ((count == NULL) || (fine == NULL)) {
         printf("Empty database\n");

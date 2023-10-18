@@ -27,11 +27,17 @@ TODO(USING THE SOLUTION vehlookup.c NOT MY CODE)
 struct vehicle *
 vehiclelookup(char *plate, char *state)
 {
-    (void)plate;    // delete this when you write your code
-    (void)state;    // delete this when you write your code
-    return NULL; // delete this when you write your code
-
     /* your code here */
-
+    uint32_t hashval;
+    hashval=hash(plate) % tabsz;
+    struct vehicle *next = *(htable + hashval);
+    while (next != NULL){
+        if ((strcmp(next->plate, plate)==0) && 
+        (strcmp(next->state, state)==0)){
+            return next;
+        }
+        next=next->next;
+    }
+    return NULL;
 }
 #endif

@@ -24,12 +24,29 @@ struct vehicle *
 sumlookup(char *summ)
 {
     unsigned long long summid;
-
     if (strtosumid(summ, &summid) != 0) {
         fprintf(stderr, "%s:sumlookup bad summons number:%s\n", argv0, summ);
         return NULL;
     }
 /* your code here */
-    return NULL; //delete this when you write your code
+    struct vehicle **endptr = htable+tabsz;//end of hash table
+    struct vehicle **chain = htable;//traverses hash table
+    while (chain < endptr){
+        if (*chain != NULL){
+            struct vehicle *car=*chain;//traverses vehicles in chain
+            while (car != NULL){
+                struct ticket *tkt = car -> head;
+                while (tkt != NULL){
+                    if (tkt -> summons == summid){
+                        return car;
+                    }
+                    tkt=tkt -> next;
+                }
+                car=car -> next;
+            }
+        }
+        chain++;    
+    }
+    return NULL;
 }
 #endif
